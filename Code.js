@@ -184,36 +184,6 @@ function iterDir(folder, fileConsumer){
     }
 }
 
-class Outputter {
-    constructor(sheet){
-        this.sheet = sheet;
-        this.row = 1;
-        this.col = 1;
-    }
-
-    outputFolder(folder){
-        this.sheet.getRange(this.row, this.col).setValue(folder.getName());
-        this.row++;
-        this.col++;
-    }
-
-    doneWithFolder(){
-        this.col--;
-    }
-
-    outputFile(file){
-        this.sheet.getRange(this.row, this.col).setValue(file.getName());
-        this.row++;
-    }
-
-    outputReformattedFile(orig, reform){
-        this.sheet.getRange(this.row, this.col, 1, 3).setValues([
-            [orig.getName(), "--->", reform.getName()]
-        ]);
-        this.row++;
-    }
-}
-
 //https://developers.google.com/drive/api/v2/v3versusv2
 /*
 While this is using the v2 of the Google Drive API instead of v3,
