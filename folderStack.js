@@ -1,12 +1,15 @@
 /*
-The folder queue is used to keep track of which folders still need to be
-processed.
+This folder stack is used to keep track of which folders are immediate children
+of the folder currently being processed.
 
 This is stored in a Google Sheet so it can persist across program executions,
 bypassing the issue of Google Script executions timing out.
+
+This allows pre-order processing to work safely, so the Outputter can still
+print the folder structure properly
 */
 
-class FolderQueue {
+class FolderStack {
 
     /*
     sheet - the Google Sheet this persists in
@@ -22,14 +25,14 @@ class FolderQueue {
     */
     insertHeader(){
         this.sheet.getRange(1, this.colNum).setValue(
-            "Put folder URLs or IDs below this cell"
+            "The Script will process these files soon"
         );
     }
 
     /*
     make sure to pass the folder's ID, NOT the actual folder object
     */
-    enqueue(folderId){
+    push(folderId){
         this.sheet.getRange(
             this.sheet.getLastRow() + 1,
             this.colNum
@@ -40,7 +43,7 @@ class FolderQueue {
     use this to check if all folders have been processed
     */
     isEmpty(){
-        return this.peek() == null;
+        return this.sheet.getLastRow() == 1;
     }
 
     /*
@@ -48,7 +51,7 @@ class FolderQueue {
     */
     peek(){
         return this.sheet.getRange(
-            2, // first row after the header
+            this.sheet.getLastRow(),
             this.colNum
         ).getValue();
     }
@@ -58,13 +61,12 @@ class FolderQueue {
     Otherwise, if this method is called and the script times out before
     processing completes, the folder is incorrectly marked complete.
     */
-    dequeue(){
+    pop(){
         let value = this.peek();
         this.sheet.getRange(
-            2,
+            this.sheet.getLastRow(),
             this.colNum
         ).deleteCells(SpreadsheetApp.Dimension.COLUMNS);
-        // shifts cells up after delete
         return value;
     }
 }

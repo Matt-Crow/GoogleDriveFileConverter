@@ -39,7 +39,8 @@ const PROCESSING_LIST_NAME = "folders to process";
 const EXTENSIONS = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].map((e)=>e.toLowerCase());
 
 // I would like to keep the folder structure display the old version had
-
+// stack and queue must each have their own sheet, otherwise getLastRow() will not work
+// (when one is larger than the other)
 function onOpen(){
     SpreadsheetApp
     .getUi()
