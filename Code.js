@@ -35,8 +35,14 @@ maintaining the indentation output given by the outputter and keeping in mind
 Google Script's limitations
 */
 
-const PROCESSING_LIST_NAME = "folders to process";
-const EXTENSIONS = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].map((e)=>e.toLowerCase());
+//const PROCESSING_LIST_NAME = "folders to process";
+
+
+
+
+const DO_CONVERSION = !true; // change this once it seems to work
+
+
 
 // I would like to keep the folder structure display the old version had
 // stack and queue must each have their own sheet, otherwise getLastRow() will not work
@@ -51,9 +57,21 @@ function onOpen(){
 }
 
 function createResources(){
-    new ProcessingList(PROCESSING_LIST_NAME).createIfAbsent();
+    getOrCreateFolderQueue();
 }
 
+function run(){
+    let outputSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+    let processor = new FileProcessor(
+        new Outputter(outputSheet),
+        getOrCreateFolderQueue(),
+        getOrCreateFolderStack(),
+        DO_CONVERSION
+    );
+    processor.run();
+}
+
+/*
 class ProcessingList {
     constructor(sheetName){
         this.sheetName = sheetName;
@@ -94,7 +112,7 @@ class ProcessingList {
             1
         ).setValue(id);
     }
-}
+}*/
 
 function extractFolderIdFromUrl(url){
     const regex = /\/drive(\/u\/[^\/]*)?\/folders\/([^\/?]*)\/?/;
@@ -106,71 +124,7 @@ function extractFolderIdFromUrl(url){
     return id;
 }
 
-function run(){
-    let outputSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
-    let processor = new FileProcessor(
-        new Outputter(outputSheet),
-        new ProcessingList(PROCESSING_LIST_NAME)
-    );
-    processor.run();
-}
 
-/*
-This handles file conversion and outputting
-*/
-class FileProcessor {
-    constructor(outputter, processingList){
-        this.outputter = outputter;
-        this.processingList = processingList;
-    }
-
-    run(){
-        this.processingList.initialize();
-        while(this.processingList.hasMoreFolders()){
-            this.process(this.processingList.getNextFolder());
-            this.processingList.doneWithFolder();
-        }
-    }
-
-    process(folder){
-        this.outputter.outputFolder(folder);
-
-        let fileIter = folder.getFiles();
-        while(fileIter.hasNext()){
-            this.processFile(fileIter.next());
-        }
-
-        let dirIter = folder.getFolders();
-        while(dirIter.hasNext()){
-            this.processingList.enqueueFolder(dirIter.next().getId());
-        }
-
-        this.outputter.doneWithFolder();
-    }
-
-    processFile(file){
-        if(file.isTrashed()){
-            return;
-        }
-        let reformatted = null;
-
-        if(this.shouldProcess(file)){
-            // do conversion
-            reformatted = toGoogleFile(file);
-            this.outputter.outputReformattedFile(file, reformatted);
-            console.log(reformatted.getUrl());
-        } else {
-            //this.outputter.outputFile(file);
-        }
-    }
-
-    shouldProcess(file){
-        let name = file.getName();
-        let dot = name.lastIndexOf(".");
-        let extension = name.substring(dot + 1).toLowerCase();
-        return EXTENSIONS.includes(extension);
-    }
-}
 
 function iterDir(folder, fileConsumer){
     let fileIter = folder.getFiles();
@@ -182,34 +136,4 @@ function iterDir(folder, fileConsumer){
     while(dirIter.hasNext()){
         iterDir(dirIter.next(), fileConsumer);
     }
-}
-
-//https://developers.google.com/drive/api/v2/v3versusv2
-/*
-While this is using the v2 of the Google Drive API instead of v3,
-I couldn't find any examples of how to convert on upload with the latest version,
-and have wasted enough time trying
-*/
-function toGoogleFile(microsoftFile){
-    let parent = microsoftFile.getParents().next();
-    let request = UrlFetchApp.fetch(
-        "https://www.googleapis.com/upload/drive/v2/files?uploadType=media&convert=true", {
-            method: "POST",
-            contentType: microsoftFile.getMimeType(),
-            payload: microsoftFile.getBlob().getBytes(),
-            headers: {
-                "Authorization" : `Bearer ${ScriptApp.getOAuthToken()}`
-            },
-            muteHttpExceptions: true
-        }
-    );
-    let response = JSON.parse(request.getContentText());
-    //console.log(response);
-    let converted = DriveApp.getFileById(response.id); // not getId()
-    converted.moveTo(parent);
-
-    let microName = microsoftFile.getName();
-    converted.setName(microName.substring(0, microName.lastIndexOf(".")));
-
-    return converted;
 }

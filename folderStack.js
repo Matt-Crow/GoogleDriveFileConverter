@@ -9,6 +9,18 @@ This allows pre-order processing to work safely, so the Outputter can still
 print the folder structure properly
 */
 
+function getOrCreateFolderStack(){
+    let workbook = SpreadsheetApp.getActiveSpreadsheet();
+    let name = "Folder Stack";
+    let folderStackSheet = workbook.getSheetByName(name);
+    if(folderStackSheet == null){
+        folderStackSheet = workbook.insertSheet(name);
+    }
+    let fs = new FolderStack(folderStackSheet, 1);
+    fs.insertHeader();
+    return fs;
+}
+
 class FolderStack {
 
     /*
