@@ -37,7 +37,7 @@ class FolderStack {
     */
     insertHeader(){
         this.sheet.getRange(1, this.colNum).setValue(
-            "The Script will process these files soon"
+            "The Script will process these folders soon"
         );
     }
 
@@ -78,7 +78,7 @@ class FolderStack {
         this.sheet.getRange(
             this.sheet.getLastRow(),
             this.colNum
-        ).deleteCells(SpreadsheetApp.Dimension.COLUMNS);
+        ).deleteCells(SpreadsheetApp.Dimension.ROWS);
         return value;
     }
 }

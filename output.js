@@ -13,7 +13,7 @@ class Outputter {
 
     outputFolder(folder){
         let link = SpreadsheetApp.newRichTextValue().setText(folder.getName()).setLinkUrl(folder.getUrl()).build();
-        this.sheet.getRange(this.row, this.col).setValue(link);
+        this.sheet.getRange(this.row, this.col).setRichTextValue(link);
         this.row++;
         this.col++;
     }
@@ -29,11 +29,12 @@ class Outputter {
 
     linkForFile(file){
         let link = SpreadsheetApp.newRichTextValue().setText(file.getName()).setLinkUrl(file.getUrl()).build();
+        return link;
     }
 
     outputReformattedFile(orig, reform){
-        this.sheet.getRange(this.row, this.col, 1, 3).setValues([
-            [this.linkForFile(orig), "--->", this.linkForFile(reform)]
+        this.sheet.getRange(this.row, this.col, 1, 2).setRichTextValues([
+            [this.linkForFile(orig), this.linkForFile(reform)]
         ]);
         this.row++;
     }

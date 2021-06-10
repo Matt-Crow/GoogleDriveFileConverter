@@ -27,24 +27,11 @@ Here is the proposed alternative method:
 4. mark the root folder as done, removing it from the queue
 5. pop the top of the processing stack, and move it to the start of the queue
 
-
-
-!!! HERE !!!
 Essentially, I need to figure out how to process the folders pre-order while also
 maintaining the indentation output given by the outputter and keeping in mind
 Google Script's limitations
 */
 
-//const PROCESSING_LIST_NAME = "folders to process";
-
-
-
-
-const DO_CONVERSION = !true; // change this once it seems to work
-
-
-
-// I would like to keep the folder structure display the old version had
 // stack and queue must each have their own sheet, otherwise getLastRow() will not work
 // (when one is larger than the other)
 function onOpen(){
@@ -53,6 +40,7 @@ function onOpen(){
     .createMenu("File Converter")
     .addItem("create resources", "createResources")
     .addItem("run", "run")
+    .addItem("Test run", "testRun")
     .addToUi();
 }
 
@@ -61,58 +49,23 @@ function createResources(){
 }
 
 function run(){
+    doRun(true);
+}
+
+function testRun(){
+    doRun(false);
+}
+
+function doRun(doConvert){
     let outputSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
     let processor = new FileProcessor(
         new Outputter(outputSheet),
         getOrCreateFolderQueue(),
         getOrCreateFolderStack(),
-        DO_CONVERSION
+        doConvert
     );
     processor.run();
 }
-
-/*
-class ProcessingList {
-    constructor(sheetName){
-        this.sheetName = sheetName;
-    }
-
-    createIfAbsent(){
-        let workbook = SpreadsheetApp.getActiveSpreadsheet();
-        let procList = workbook.getSheetByName(this.sheetName);
-        if(procList === null){
-            procList = workbook.insertSheet(this.sheetName);
-            procList.getRange(1, 1).setValue("Put folder URLs or IDs below this cell");
-        }
-    }
-
-    getSheet(){
-        return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(this.sheetName);
-    }
-
-    initialize(){
-        this.sheet = this.getSheet(); // cache sheet so it only calls the SpreadsheetApp service once
-    }
-
-    hasMoreFolders(){
-        return this.sheet.getRange(2, 1).getValue() != null;
-    }
-
-    getNextFolder(){
-        return DriveApp.getFolderById(extractFolderIdFromUrl(this.sheet.getRange(2, 1).getValue()));;
-    }
-
-    doneWithFolder(){
-        this.sheet.deleteRow(2);
-    }
-
-    enqueueFolder(id){
-        this.sheet.getRange(
-            this.sheet.getLastRow() + 1,
-            1
-        ).setValue(id);
-    }
-}*/
 
 function extractFolderIdFromUrl(url){
     const regex = /\/drive(\/u\/[^\/]*)?\/folders\/([^\/?]*)\/?/;

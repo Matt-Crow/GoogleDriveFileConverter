@@ -3,6 +3,8 @@ The FileProcessor class is used to process files and folders
 */
 
 const EXTENSIONS = ["doc", "docx", "xls", "xlsx", "ppt", "pptx"].map((e)=>e.toLowerCase());
+const OUTPUT_ALL = false; // change this to true if you want it to output all files it finds,
+// rather than just the ones it will convert
 
 class FileProcessor {
 
@@ -14,9 +16,14 @@ class FileProcessor {
     }
 
     run(){
-        // TODO: move stack to queue
-
         this.folderQueue.insertHeader();
+
+        // move stack to queue
+        while(!this.folderStack.isEmpty()){
+          this.folderQueue.enqueue(this.folderStack.peek());
+          this.folderStack.pop();
+        }
+
         while(!this.folderQueue.isEmpty()){
             this.processNext();
         }
@@ -32,15 +39,18 @@ class FileProcessor {
         }
 
         let dirIter = folder.getFolders();
+        let numSubdirs = 0;
         while(dirIter.hasNext()){
             this.folderStack.push(dirIter.next().getId());
+            ++numSubdirs;
         }
         this.folderQueue.dequeue(); // mark this folder as done
 
         // process the folders I just pushed
-        while(!this.folderStack.isEmpty()){
+        while(numSubdirs > 0){
             this.folderQueue.pushToFront(this.folderStack.peek());
             this.folderStack.pop();
+            --numSubdirs;
             this.processNext();
         }
 
@@ -52,11 +62,11 @@ class FileProcessor {
             return;
         }
         let reformatted = null;
-
-        if(this.doConversion && this.shouldProcess(file)){
+        let proc = this.shouldProcess(file);
+        if(this.doConversion && proc){
             reformatted = toGoogleFile(file);
             this.outputter.outputReformattedFile(file, reformatted);
-        } else {
+        } else if(proc || OUTPUT_ALL){
             this.outputter.outputFile(file);
         }
     }

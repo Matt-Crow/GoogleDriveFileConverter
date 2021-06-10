@@ -60,7 +60,8 @@ class FolderQueue {
     use this to check if all folders have been processed
     */
     isEmpty(){
-        return this.peek() == null;
+        let top = this.peek();
+        return top == null || top == "";
     }
 
     /*
@@ -103,7 +104,7 @@ class FolderQueue {
         this.sheet.getRange(
             2,
             this.colNum
-        ).deleteCells(SpreadsheetApp.Dimension.COLUMNS);
+        ).deleteCells(SpreadsheetApp.Dimension.ROWS);
         // shifts cells up after delete
         return value;
     }
